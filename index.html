@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#020617">
+    
+    <!-- Metadados para o Sistema -->
+    <meta name="apple-mobile-web-app-title" content="Orquestra Tuner">
+    <meta name="application-name" content="Orquestra Tuner">
+    
+    <title>Orquestra Tuner</title>
+    
+    <!-- Links para PWA e Ícone -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <style>
+        :root {
+            --bg-color: #020617;
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --blue-neon: #3b82f6;
+            --green-neon: #10b981;
+            --yellow-neon: #eab308;
+            --red-neon: #ef4444;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --shadow-3d: #000000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Banner de Instalação PWA */
+        #pwa-install-banner {
+            background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 0.5rem 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 200;
+            font-size: 0.75rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            animation: slideDown 0.3s ease-out;
+            flex-shrink: 0;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        .install-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+
+        .install-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-install-now {
+            background: #10b981;
+            color: #020617;
+            border: none;
+            padding: 0.35rem 0.8rem;
+            border-radius: 1rem;
+            font-weight: 800;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-dismiss {
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        header {
+            padding: clamp(0.5rem, 1.5vh, 1rem);
+            background: rgba(2, 6, 23, 0.95);
+            border-bottom: 1px solid #1e293b;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .app-title {
+            font-size: clamp(9px, 1.3vh, 11px);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: var(--blue-neon);
+            margin-bottom: clamp(0.3rem, 1vh, 0.8rem);
+            display: block;
+            text-align: center;
+        }
+
+        .btn-3d {
+            background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: clamp(0.4rem, 1vh, 0.6rem) clamp(1.2rem, 3vw, 1.8rem);
+            border-radius: 1.2rem;
+            font-weight: 800;
+            font-size: clamp(0.65rem, 1.2vh, 0.75rem);
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 3px 0px 0px #1e40af, 0 0 10px rgba(59, 130, 246, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.1s;
+        }
+
+        .btn-3d:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0px 0px #1e40af;
+        }
+
+        .btn-ref {
+            margin-top: clamp(4px, 1vh, 10px);
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            color: #94a3b8;
+            padding: clamp(0.3rem, 0.8vh, 0.5rem) clamp(1rem, 2.5vw, 1.5rem);
+            border-radius: 2rem;
+            font-size: clamp(8px, 1vh, 10px);
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .btn-ref.active {
+            border-color: var(--blue-neon);
+            color: white;
+            background: var(--blue-neon);
+            box-shadow: 0 0 10px var(--blue-neon);
+        }
+
+        #tuner-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+            padding: clamp(0.5rem, 1.5vh, 1rem) 1rem;
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        .gauge-container {
+            width: min(320px, 85vw);
+            height: min(150px, 20vh);
+            flex-shrink: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gauge-canvas { width: 100%; height: 100%; }
+
+        .freq-text {
+            font-size: clamp(1.5rem, 3.8vh, 2.2rem);
+            font-weight: 900;
+            color: #cbd5e1;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .status-text {
+            font-size: clamp(8px, 1.2vh, 10px);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            margin-top: 2px;
+        }
+
+        .note-card {
+            width: clamp(110px, 20vh, 170px);
+            height: clamp(110px, 20vh, 170px);
+            background: var(--card-bg);
+            border-radius: clamp(2rem, 4vh, 3.5rem);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .note-name {
+            font-size: clamp(3rem, 8vh, 4.8rem);
+            font-weight: 900;
+            color: var(--blue-neon);
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.7);
+            line-height: 1;
+        }
+
+        .note-octave {
+            font-size: clamp(8px, 1.2vh, 10px);
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        #selection-screen {
+            position: fixed;
+            inset: 0;
+            background: #010413;
+            z-index: 100;
+            padding: clamp(1rem, 3vh, 2rem) 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .selection-header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: clamp(0.5rem, 2vh, 1.5rem);
+            flex-shrink: 0;
+        }
+
+        .selection-header h1 {
+            font-size: clamp(1rem, 2.2vh, 1.3rem);
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            text-align: center;
+            text-shadow: 0 0 12px var(--blue-neon);
+        }
+
+        .instrument-list {
+            flex: 1;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            gap: clamp(6px, 1.2vh, 14px);
+            padding: 2px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .instrument-btn {
+            background: #111827;
+            border: 1px solid #1e293b;
+            padding: clamp(0.6rem, 1.4vh, 1rem);
+            border-radius: clamp(1rem, 2vh, 1.5rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-align: center;
+            color: white;
+            width: 100%;
+            box-shadow: 0 4px 0px 0px var(--shadow-3d);
+            transition: all 0.1s;
+            flex-shrink: 1;
+        }
+
+        .instrument-btn:active { 
+            transform: translateY(2px);
+            box-shadow: 0 1px 0px 0px var(--shadow-3d);
+        }
+
+        .instrument-btn-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .instrument-name { font-weight: 800; font-size: clamp(0.85rem, 1.8vh, 1rem); }
+        .instrument-desc { font-size: clamp(7px, 1vh, 9px); color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
+
+        footer {
+            padding: clamp(0.4rem, 1vh, 0.8rem);
+            font-size: clamp(8px, 1vh, 10px);
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            text-align: center;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        footer a { color: var(--blue-neon); text-decoration: none; font-weight: 900; }
+
+        .hidden { display: none !important; }
+        .instrument-list::-webkit-scrollbar { width: 0px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="pwa-install-banner" class="hidden">
+        <div class="install-info">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Instalar Orquestra Tuner</span>
+        </div>
+        <div class="install-actions">
+            <button class="btn-install-now" onclick="triggerPwaInstall()">Instalar</button>
+            <button class="btn-dismiss" onclick="dismissPwaBanner()">✕</button>
+        </div>
+    </div>
+
+    <header id="app-header" class="hidden">
+        <span class="app-title">Orquestra Tuner</span>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <button class="btn-3d" onclick="showSelectionScreen()">
+                <span id="current-instrument-label">Selecionar</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <button id="ref-tone-btn" class="btn-ref" onclick="toggleReferenceTone()">Lá 440</button>
+        </div>
+    </header>
+
+    <main id="tuner-screen" class="hidden">
+        <div class="gauge-container">
+            <canvas id="gauge-canvas"></canvas>
+        </div>
+        <div style="text-align: center;">
+            <div id="freq-display" class="freq-text">0.0 Hz</div>
+            <div id="status-text" class="status-text" style="color: #64748b;">Escutando...</div>
+        </div>
+
+        <div class="note-card">
+            <span id="note-main" class="note-name">--</span>
+            <span id="note-sub" class="note-octave">Oitava --</span>
+        </div>
+
+        <footer>
+            By <a href="https://www.instagram.com/rochasoulmusic" target="_blank">@rochasoulmusic</a>
+        </footer>
+    </main>
+
+    <div id="selection-screen">
+        <div class="selection-header">
+            <div style="font-size: clamp(7px, 1vh, 9px); font-weight: 900; color: #3b82f6; letter-spacing: 0.4em; margin-bottom: 4px;">PROFESSIONAL</div>
+            <h1>Orquestra Tuner</h1>
+        </div>
+
+        <div class="instrument-list">
+            <button class="instrument-btn" onclick="initTuner('flute')">
+                <div class="instrument-btn-content">
+                    <div class="instrument-name">Flauta Transversal</div>
+                    <div class="instrument-desc">Lendo em Dó</div>
+                </div>
+            </button>
+            <button class="instrument-btn" onclick="initTuner('clarinet')">
+                <div class="instrument-btn-content">
+                    <div class="instrument-name">Clarinete em Si♭</div>
+                    <div class="instrument-desc">Transporta Si♭</div>
+                </div>
+            </button>
+            <button class="instrument-btn" onclick="initTuner('sax-alto')">
+                <div class="instrument-btn-content">
+                    <div class="instrument-name">Saxofone Alto</div>
+                    <div class="instrument-desc">Transporta Mi♭</div>
+                </div>
+            </button>
+            <button class="instrument-btn" onclick="initTuner('sax-tenor')">
+                <div class="instrument-btn-content">
+                    <div class="instrument-name">Saxofone Tenor</div>
+                    <div class="instrument-desc">Transporta Si♭</div>
+                </div>
+            </button>
+            <button class="instrument-btn" onclick="initTuner('trumpet')">
+                <div class="instrument-btn-content">
+                    <div class="instrument-name">Trompete em Si♭</div>
+                    <div class="instrument-desc">Transporta Si♭</div>
+                </div>
+            </button>
+            <button class="instrument-btn" onclick="initTuner('trombone')">
+                <div class="instrument-btn-content">
+                    <div class="instrument-name">Trombone de Vara</div>
+                    <div class="instrument-desc">Leitura em Dó</div>
+                </div>
+            </button>
+            <button class="instrument-btn" onclick="initTuner('chromatic')" style="border-color: rgba(59,130,246,0.3)">
+                <div class="instrument-btn-content">
+                    <div class="instrument-name">Geral / Violão / Voz</div>
+                    <div class="instrument-desc">Modo de Alta Estabilidade</div>
+                </div>
+            </button>
+        </div>
+
+        <footer>
+            Criado por <a href="https://www.instagram.com/rochasoulmusic" target="_blank">@rochasoulmusic</a>
+        </footer>
+    </div>
+
+    <script>
+        let deferredPrompt = null;
+        const installBanner = document.getElementById('pwa-install-banner');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!localStorage.getItem('pwa_banner_dismissed')) {
+                installBanner.classList.remove('hidden');
+            }
+        });
+
+        function triggerPwaInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('Utilizador aceitou a instalação');
+                    }
+                    deferredPrompt = null;
+                    installBanner.classList.add('hidden');
+                });
+            }
+        }
+
+        function dismissPwaBanner() {
+            installBanner.classList.add('hidden');
+            localStorage.setItem('pwa_banner_dismissed', 'true');
+        }
+
+        window.addEventListener('appinstalled', () => {
+            installBanner.classList.add('hidden');
+            deferredPrompt = null;
+        });
+
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) { console.log("WakeLock erro:", err); }
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW registado!'))
+                .catch(err => console.log('SW falhou:', err));
+            });
+        }
+
+        const CONCERT_A = 440;
+        const NOTE_NAMES = ['Dó', 'Dó#', 'Ré', 'Ré#', 'Mi', 'Fá', 'Fá#', 'Sol', 'Sol#', 'Lá', 'Lá#', 'Si'];
+        const INSTRUMENTS = {
+            'chromatic': { name: 'Geral', transpose: 0 },
+            'flute': { name: 'Flauta', transpose: 0 },
+            'clarinet': { name: 'Clarinete', transpose: 2 },
+            'sax-alto': { name: 'Saxofone Alto', transpose: 9 },
+            'sax-tenor': { name: 'Saxofone Tenor', transpose: 14 },
+            'trumpet': { name: 'Trompete', transpose: 2 },
+            'trombone': { name: 'Trombone', transpose: 0 }
+        };
+
+        let currentInstrument = 'chromatic';
+        let audioContext = null, analyser = null, dataArray = null;
+        let isRunning = false;
+        let frequencyBuffer = [];
+        const BUFFER_SIZE = 6; 
+        let smoothedCents = 0;
+        const SMOOTHING_FACTOR = 0.15;
+        let lastStableNote = -1, noteStabilityCounter = 0;
+        const STABILITY_THRESHOLD = 3; 
+
+        let referenceOscillator = null, isRefPlaying = false, audioStream = null;
+
+        const canvas = document.getElementById('gauge-canvas'), ctx = canvas.getContext('2d');
+        const freqDisplay = document.getElementById('freq-display'), statusText = document.getElementById('status-text');
+        const noteMain = document.getElementById('note-main'), noteSub = document.getElementById('note-sub');
+        const tunerScreen = document.getElementById('tuner-screen'), selectionScreen = document.getElementById('selection-screen');
+
+        function resizeCanvas() {
+            if (tunerScreen.classList.contains('hidden')) return;
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentNode.getBoundingClientRect();
+            canvas.width = rect.width * dpr; 
+            canvas.height = rect.height * dpr;
+            drawGauge(smoothedCents);
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawGauge(cents) {
+            const w = canvas.width, h = canvas.height;
+            if (w === 0) return;
+            const dpr = window.devicePixelRatio || 1;
+            ctx.clearRect(0, 0, w, h);
+            const centerX = w / 2, centerY = h - (8 * dpr), radius = w / 2.3;
+            ctx.beginPath(); ctx.arc(centerX, centerY, radius, Math.PI, 2 * Math.PI);
+            ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 14 * dpr; ctx.stroke();
+            drawNeonArc(centerX, centerY, radius, -10, 10, '#10b981', 14 * dpr, 15);
+            drawNeonArc(centerX, centerY, radius, -40, -10, '#eab308', 11 * dpr, 0);
+            drawNeonArc(centerX, centerY, radius, 10, 40, '#eab308', 11 * dpr, 0);
+            drawNeonArc(centerX, centerY, radius, -100, -40, '#ef4444', 9 * dpr, 0);
+            drawNeonArc(centerX, centerY, radius, 40, 100, '#ef4444', 9 * dpr, 0);
+            const tipX = centerX, tipY = centerY - radius;
+            ctx.save(); ctx.beginPath(); ctx.shadowBlur = 15 * dpr; ctx.shadowColor = '#10b981';
+            ctx.fillStyle = '#10b981'; ctx.moveTo(tipX, tipY + (10 * dpr));
+            ctx.lineTo(tipX - 5 * dpr, tipY + 25 * dpr); ctx.lineTo(tipX + 5 * dpr, tipY + 25 * dpr);
+            ctx.fill(); ctx.restore();
+            const nCents = Math.max(-100, Math.min(100, cents)), angle = Math.PI + (nCents + 100) / 200 * Math.PI;
+            let color = Math.abs(cents) <= 10 ? '#10b981' : (Math.abs(cents) <= 40 ? '#eab308' : '#ef4444');
+            ctx.save(); ctx.shadowBlur = 20 * dpr; ctx.shadowColor = color; ctx.beginPath();
+            ctx.moveTo(centerX, centerY); ctx.lineTo(centerX + Math.cos(angle) * (radius - 5 * dpr), centerY + Math.sin(angle) * (radius - 5 * dpr));
+            ctx.strokeStyle = color; ctx.lineWidth = 4 * dpr; ctx.lineCap = 'round'; ctx.stroke(); ctx.restore();
+        }
+
+        function drawNeonArc(cx, cy, r, sC, eC, color, width, glow) {
+            const sA = Math.PI + (sC + 100) / 200 * Math.PI, eA = Math.PI + (eC + 100) / 200 * Math.PI;
+            ctx.save(); if (glow > 0) { ctx.shadowBlur = glow; ctx.shadowColor = color; ctx.globalAlpha = 1.0; } else { ctx.globalAlpha = 0.2; }
+            ctx.beginPath(); ctx.arc(cx, cy, r, sA, eA); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); ctx.restore();
+        }
+
+        async function initTuner(id) {
+            requestWakeLock();
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            currentInstrument = id; document.getElementById('current-instrument-label').innerText = INSTRUMENTS[id].name;
+            selectionScreen.classList.add('hidden'); document.getElementById('app-header').classList.remove('hidden');
+            tunerScreen.classList.remove('hidden'); setTimeout(resizeCanvas, 100);
+            try {
+                if (audioContext.state === 'suspended') await audioContext.resume();
+                if (!audioStream) {
+                    audioStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
+                    });
+                    analyser = audioContext.createAnalyser(); 
+                    analyser.fftSize = 4096; 
+                    audioContext.createMediaStreamSource(audioStream).connect(analyser);
+                    dataArray = new Float32Array(analyser.fftSize); isRunning = true; update();
+                }
+            } catch (err) { statusText.innerText = "SEM ACESSO AO MIC"; }
+        }
+
+        function showSelectionScreen() {
+            if (wakeLock) wakeLock.release();
+            selectionScreen.classList.remove('hidden'); document.getElementById('app-header').classList.add('hidden');
+            tunerScreen.classList.add('hidden'); if (isRefPlaying) toggleReferenceTone();
+        }
+
+        function toggleReferenceTone() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const btn = document.getElementById('ref-tone-btn');
+            if (!isRefPlaying) {
+                referenceOscillator = audioContext.createOscillator(); const gain = audioContext.createGain();
+                referenceOscillator.frequency.setValueAtTime(440, audioContext.currentTime); gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+                referenceOscillator.connect(gain).connect(audioContext.destination); referenceOscillator.start();
+                isRefPlaying = true; btn.classList.add('active');
+            } else { if (referenceOscillator) referenceOscillator.stop(); isRefPlaying = false; btn.classList.remove('active'); }
+        }
+
+        function getPitch(buf, sampleRate) {
+            let SIZE = buf.length; let MAX_SAMPLES = Math.floor(SIZE / 2); let rms = 0;
+            for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+            rms = Math.sqrt(rms / SIZE); if (rms < 0.01) return -1; 
+            let diff = new Float32Array(MAX_SAMPLES); diff[0] = 1; let runningSum = 0;
+            for (let tau = 1; tau < MAX_SAMPLES; tau++) {
+                let d = 0; for (let i = 0; i < MAX_SAMPLES; i++) { let delta = buf[i] - buf[i + tau]; d += delta * delta; }
+                runningSum += d; diff[tau] = d / (runningSum / tau);
+            }
+            let period = -1; let threshold = 0.1; 
+            for (let tau = 1; tau < MAX_SAMPLES; tau++) {
+                if (diff[tau] < threshold) {
+                    while (tau + 1 < MAX_SAMPLES && diff[tau + 1] < diff[tau]) tau++;
+                    period = tau; break;
+                }
+            }
+            if (period === -1) return -1;
+            let x0 = period - 1, x1 = period, x2 = period + 1;
+            if (x2 < MAX_SAMPLES) {
+                let y0 = diff[x0], y1 = diff[x1], y2 = diff[x2];
+                let p = period + (y0 - y2) / (2 * (y0 - 2 * y1 + y2)); return sampleRate / p;
+            }
+            return sampleRate / period;
+        }
+
+        function update() {
+            if (!isRunning) return;
+            analyser.getFloatTimeDomainData(dataArray);
+            let freq = getPitch(dataArray, audioContext.sampleRate);
+            if (freq > 20 && freq < 3000) {
+                frequencyBuffer.push(freq); if (frequencyBuffer.length > BUFFER_SIZE) frequencyBuffer.shift();
+                let sorted = [...frequencyBuffer].sort((a, b) => a - b);
+                let stableFreq = sorted[Math.floor(sorted.length / 2)];
+                const noteNum = 12 * (Math.log(stableFreq / CONCERT_A) / Math.log(2));
+                const concertNote = Math.round(noteNum) + 69;
+                const instNote = concertNote + INSTRUMENTS[currentInstrument].transpose;
+                if (instNote === lastStableNote) { noteStabilityCounter = Math.min(noteStabilityCounter + 1, STABILITY_THRESHOLD + 1);
+                } else { noteStabilityCounter = 0; lastStableNote = instNote; }
+                if (noteStabilityCounter >= STABILITY_THRESHOLD) {
+                    noteMain.innerText = NOTE_NAMES[instNote % 12] || "--";
+                    noteSub.innerText = `Oitava ${Math.floor(instNote / 12) - 1}`;
+                }
+                const expected = CONCERT_A * Math.pow(2, (concertNote - 69) / 12);
+                const cents = Math.floor(1200 * Math.log(stableFreq / expected) / Math.log(2));
+                smoothedCents = (smoothedCents * (1 - SMOOTHING_FACTOR)) + (cents * SMOOTHING_FACTOR);
+                freqDisplay.innerText = stableFreq.toFixed(1) + " Hz";
+                const isTuned = Math.abs(smoothedCents) <= 10;
+                statusText.innerText = isTuned ? "AFINADO" : (smoothedCents < 0 ? "GRAVE" : "AGUDO");
+                statusText.style.color = isTuned ? "#10b981" : "#3b82f6"; drawGauge(smoothedCents);
+            } else { statusText.innerText = "ESCUTANDO..."; statusText.style.color = "#64748b"; smoothedCents *= 0.8; drawGauge(smoothedCents); }
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock();
+        });
+    </script>
+</body>
+</html>
